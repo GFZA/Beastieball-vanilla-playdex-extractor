@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+from pathlib import Path
 
 PATHS : dict[str, str] = {
     "beastie_data" : "JSONs/beastie_data.json",
@@ -9,8 +10,9 @@ PATHS : dict[str, str] = {
     "internal_name" : "JSONs/beastie_internal_name.json",
 }
 
-OUTPUT_TEXT : str = "output.txt"
-OUTPUT_CSV : str = "output.csv"
+OUTPUT_TEXT : str = "vanilla_playdex.txt"
+OUTPUT_CSV : str = "vanilla_playdex.csv"
+OUTPUT_FULL : str = "Vanilla Playdex"
 
 dicts : dict[str, dict[str, str]] = {
     "beastie_data" : {},
@@ -30,6 +32,8 @@ def main() -> None:
             _output_text()
         case 2:
             _output_csv()
+        case 3:
+            _output_full()
         case _:
             print("Error: Wrong output type!")
             return
@@ -54,10 +58,11 @@ def _get_result_type() -> int:
     prompt : str = "Select output type.\n"
     prompt += "> Type \"1\" for text file.\n"
     prompt += "> Type \"2\" for csv file.\n"
+    prompt += "> Type \"3\" for full mod folder.\n"
     while True:
         try:
             result_type = int(input(prompt))
-            if result_type < 1 or result_type > 2:
+            if result_type < 1 or result_type > 3:
                 print("* No option for that number.")
                 continue
             break
@@ -146,6 +151,25 @@ def _output_csv() -> None:
         writer = csv.writer(file)
         writer.writerows(output_list)
         print(f"Created {OUTPUT_CSV}!")
+
+
+def _output_full() -> None:
+    output_dir = Path(OUTPUT_FULL)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    for beastie in dicts["internal_name"].keys():
+        output_beastie_dir = output_dir.joinpath(beastie)
+        output_beastie_dir.mkdir(parents=True, exist_ok=True)
+
+        output_ini = output_beastie_dir.joinpath("beastie_data.ini")
+        playdex : list[str] = _get_playdex_list(beastie)
+        content : str = "[playbook]\n"
+        content += f"plays_level = \"{playdex[1]}\"\n"
+        content += f"plays_extra = \"{playdex[2]}\"\n"
+        with open(output_ini, mode="w") as file:
+            file.write(content)
+
+    print(f"Created full mod folder!")
 
 
 if __name__ == "__main__":
