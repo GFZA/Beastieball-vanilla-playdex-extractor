@@ -163,13 +163,14 @@ def _output_full() -> None:
 
         output_ini = output_beastie_dir.joinpath("beastie_data.ini")
         playdex : list[str] = _get_playdex_list(beastie)
-        content : str = "[playbook]\n"
+        content : str = f"[basic]\nreskins = \"{beastie}\"\n\n"
+        content += "[playbook]\n"
         content += f"plays_level = \"{playdex[1]}\"\n"
         content += f"plays_extra = \"{playdex[2]}\"\n"
         with open(output_ini, mode="w") as file:
             file.write(content)
 
-    print(f"Created full mod folder!")
+    print(f"Created full mod folder!\nPutting these folders inside the pre-created mod folder (the one with config.ini)\nshould label all beasties with MOD tag but does nothing to their playdex.)")
 
 
 if __name__ == "__main__":
