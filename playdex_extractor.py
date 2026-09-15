@@ -13,6 +13,7 @@ PATHS : dict[str, str] = {
 OUTPUT_TEXT : str = "vanilla_playdex.txt"
 OUTPUT_CSV : str = "vanilla_playdex.csv"
 OUTPUT_FULL : str = "Vanilla Playdex"
+OUTPUT_SPLIT : str = "Silly Split Plays"
 
 dicts : dict[str, dict[str, str]] = {
     "beastie_data" : {},
@@ -86,42 +87,37 @@ def _get_move_ingame_name(internal_name : str) -> str:
         return ""
     ref_text : str = dicts["move_dict"][internal_name]["name"] # type: ignore
     ref_text = ref_text.strip("Â¦")
+    if not ref_text.startswith("move"):
+        return ""
     return dicts["all_text"][ref_text]
 
 
-def _get_playdex_list(name : str) -> list[str]:
+def _get_playdex_list(name : str) -> list[list[str]]:
     internal_name = _get_internal_name(name)
     if internal_name == "":
         return []
     if not internal_name in dicts["beastie_data"].keys():
         return []
 
-    result : list[str] = [] # type: ignore
+    result : list[list[str]] = [] # type: ignore
     full_playdex : list[str] = dicts["beastie_data"][internal_name]["attklist"] # type: ignore
     raw_level_playdex : list[list[int, str]] = dicts["beastie_data"][internal_name]["learnset"] # type: ignore
     raw_level_no_int : list[str] = [] # type: ignore
-    level_playdex : str = ""
-    from_friend_playdex : str = ""
-
-    result.append(name)
+    level_playdex : list[str] = [] # type: ignore
+    extra_playdex : list[str] = [] # type: ignore
 
     for list in raw_level_playdex:
-        level_playdex += str(list[0]) # Level number (converted to string)
-        level_playdex += ", "
+        level_playdex.append(str(list[0])) # Level number
         raw_level_no_int.append(list[1])
         ingame_name : str = _get_move_ingame_name(list[1]) # Move name (converted from internal name)
-        level_playdex += ingame_name
-        level_playdex += ", "
-    level_playdex = level_playdex.rstrip(", ")
+        level_playdex.append(ingame_name)
     result.append(level_playdex)
 
     for move_name in full_playdex:
         if not move_name in raw_level_no_int:
             ingame_name : str = _get_move_ingame_name(move_name)
-            from_friend_playdex += ingame_name
-            from_friend_playdex += ", "
-    from_friend_playdex = from_friend_playdex.rstrip(", ")
-    result.append(from_friend_playdex)
+            extra_playdex.append(ingame_name)
+    result.append(extra_playdex)
 
     return result 
             
@@ -129,11 +125,11 @@ def _get_playdex_list(name : str) -> list[str]:
 def _output_text() -> None:
     output_text : str = ""
     for beastie in dicts["internal_name"].keys():
-        playdex : list[str] = _get_playdex_list(beastie)
+        playdex : list[list[str]] = _get_playdex_list(beastie)
         output_text += f">> {beastie}'s Playdex <<\n"
         output_text += "[playbook]\n"
-        output_text += f"plays_level = \"{playdex[1]}\"\n"
-        output_text += f"plays_extra = \"{playdex[2]}\"\n"
+        output_text += f"plays_level = \"{", ".join(playdex[0])}\"\n"
+        output_text += f"plays_extra = \"{", ".join(playdex[1])}\"\n"
         output_text += "\n--------------------------------------------------------\n\n"
 
     with open(OUTPUT_TEXT, mode="w") as file:
@@ -144,8 +140,12 @@ def _output_text() -> None:
 def _output_csv() -> None:
     output_list : list[list[str]] = []
     for beastie in dicts["internal_name"].keys():
-        playdex : list[str] = _get_playdex_list(beastie)
-        output_list.append(playdex)
+        playdex : list[list[str]] = _get_playdex_list(beastie)
+        row : list[str] = []
+        row.append(beastie)
+        row.append(", ".join(playdex[0]))
+        row.append(", ".join(playdex[1]))
+        output_list.append(row)
 
     with open(OUTPUT_CSV, mode="w", newline="") as file:
         writer = csv.writer(file)
@@ -162,11 +162,11 @@ def _output_full() -> None:
         output_beastie_dir.mkdir(parents=True, exist_ok=True)
 
         output_ini = output_beastie_dir.joinpath("beastie_data.ini")
-        playdex : list[str] = _get_playdex_list(beastie)
+        playdex : list[list[str]] = _get_playdex_list(beastie)
         content : str = f"[basic]\nreskins = \"{beastie}\"\n\n"
         content += "[playbook]\n"
-        content += f"plays_level = \"{playdex[1]}\"\n"
-        content += f"plays_extra = \"{playdex[2]}\"\n"
+        content += f"plays_level = \"{", ".join(playdex[0])}\"\n"
+        content += f"plays_extra = \"{", ".join(playdex[1])}\"\n"
         with open(output_ini, mode="w") as file:
             file.write(content)
 
